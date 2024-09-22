@@ -33,11 +33,12 @@ On MacOS, you can install `sqlcipher` with [brew](https://brew.sh/):
 brew install sqlcipher
 
 # Install sqlcipher3
-pip3 install sqlcipher3==0.4.5
+SQLCIPHER_VERSION="0.5.3"
+pip3 install sqlcipher3==$SQLCIPHER_VERSION
 
 # If you are getting an error "Failed to build sqlcipher3", you would need to fix the build flags:
 SQLCIPHER_PATH="$(brew --cellar sqlcipher)/$(brew list --versions sqlcipher | tr ' ' '\n' | tail -1)"
-C_INCLUDE_PATH=$SQLCIPHER_PATH/include LIBRARY_PATH=$SQLCIPHER_PATH/lib pip3 install sqlcipher3==0.4.5
+C_INCLUDE_PATH=$SQLCIPHER_PATH/include LIBRARY_PATH=$SQLCIPHER_PATH/lib pip3 install sqlcipher3==$SQLCIPHER_VERSION
 ```
 
 Then install the vault:

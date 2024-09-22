@@ -24,7 +24,7 @@ setup(
         'tabulate',
         'passwordgenerator',
         'SQLAlchemy==1.4.41',
-        'sqlcipher3==0.4.5'
+        'sqlcipher3==0.5.3'
     ],  # external dependencies
     entry_points={
         'console_scripts': [

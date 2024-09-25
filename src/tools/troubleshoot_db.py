@@ -78,7 +78,7 @@ def attempt_dummy_encrypted_db(db_path):
     connection.execute(text('CREATE TABLE foo (a int)'))
     connection.execute(text('INSERT INTO foo (a) VALUES (123)'))
     result_proxy = connection.execute(text('SELECT * FROM foo'))
-    return True if result_proxy.fetchall() == [(123,)] else False
+    return bool(result_proxy.fetchall() == [(123,)])
 
 
 def verify_if_dummy_db_is_encrypted(db_path):

@@ -42,7 +42,7 @@ def create_directory_if_missing(dir_):
             return True
 
         return False
-    except Exception:
+    except (OSError, FileExistsError):
         import sys
 
         print()

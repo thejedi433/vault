@@ -267,7 +267,7 @@ def main_menu():
         Categories menu
     """
 
-    while (True):
+    while True:
         # Clear screen
         clear_screen()
 

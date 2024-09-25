@@ -84,7 +84,8 @@ def migrate(vault_path, config_path, new_vault_path=None):
     print()
     print('The migration is now complete!')
     print('Restart the application to use Vault 2.')
-    print('Your old vault is stored in `%s`. You can discard this file after ensuring that all your data was migrated properly.' % (vault_path))
+    print('Your old vault is stored in `%s`. You can discard this file after ensuring that all your data was migrated properly.' 
+          % (vault_path))
     print('Your new vault is stored in `%s`.' % (new_vault_path))
     print()
 

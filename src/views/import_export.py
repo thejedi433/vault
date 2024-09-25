@@ -102,7 +102,8 @@ def import_from_json(path=None, rows=None):
 def import_items(rows):
     """
         Import items at the following format:
-        [{'name': '...', 'url': '...', 'login': '...', 'password': '...', 'notes': '...', 'category': '...'}]
+        [{'name': '...', 'url': '...', 'login': '...'
+        , 'password': '...', 'notes': '...', 'category': '...'}]
     """
 
     for row in rows:

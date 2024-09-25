@@ -70,5 +70,3 @@ def get_input_autocomplete(message=''):
         return input(message).strip()
     except KeyboardInterrupt:
         return False
-    except Exception:  # Other Exception
-        return False

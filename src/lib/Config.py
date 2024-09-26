@@ -34,7 +34,7 @@ class Config:
 
         self.config['MAIN'] = {
             'version': '2.00',
-            'keyVersion': '1',  # Will be used to support legacy key versions 
+            'keyVersion': '1',  # Will be used to support legacy key versions
                                 # if the algorithm changes
             'salt': self.generate_random_salt(),
             'clipboardTTL': '15',

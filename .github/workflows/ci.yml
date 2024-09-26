@@ -23,8 +23,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes gcc python3-dev libsqlcipher-dev
           pip install -U pip
-          pip install pycodestyle coverage pytest setuptools
-          python3 setup.py install
+          pip install -r requirements-test.txt
+          pip install .
       - name: Run pycodestyle
         run: |
           pycodestyle --exclude=venv --ignore=E501 .

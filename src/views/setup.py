@@ -39,8 +39,7 @@ def initialize(salt):
             print("Your vault has been created and encrypted with your master key.")
             print("Your unique salt is: %s " % (salt))
             print(
-                "Write it down."
-                 + " If you lose your config file you will need it to unlock your vault.")
+                "Write it down. If you lose your config file you will need it to unlock your vault.")
 
             return True
 

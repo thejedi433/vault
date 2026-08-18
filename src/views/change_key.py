@@ -96,23 +96,36 @@ def rekey_validation_key():
 
 def rekey_db():
     """
-        Change the db encryption key
+    Change the database encryption key.
+
+    This function re-encrypts the entire database with the new master key
+    by using SQLCipher's PRAGMA rekey command.
     """
+    import sqlcipher3
+    from hashlib import sha256
 
-    # # Get engine with rekey
-    # engine = get_engine(add_to_connection_string='?rekey=' +
-    #                     enc_new.key.decode('utf-8'))
+    # Get the current and new database keys
+    current_key = sha256(enc_current.key + global_scope['conf'].salt.encode()).hexdigest()
+    new_key = sha256(enc_new.key + global_scope['conf'].salt.encode()).hexdigest()
 
-    # # Create new session
-    # session = Session(bind=engine)
-    # session.commit()
+    # Open connection to the database with the current key
+    conn = sqlcipher3.connect(global_scope['db_file'])
+    conn.execute(f"PRAGMA key = '{current_key}'")
 
-    # # Update global scope
-    # global_scope['enc'] = enc_new
+    # Rekey the database with the new key
+    conn.execute(f"PRAGMA rekey = '{new_key}'")
+    conn.commit()
+    conn.close()
 
-    print('Change the db encryption key: not implemented!')
+    # Update global scope to use the new encryption
+    global_scope['enc'] = enc_new
 
-    return None
+    # Drop existing sessions to force reconnection with new key
+    from ..models.base import drop_sessions
+    drop_sessions()
+
+    print('Database encryption key has been successfully updated.')
+    return True
 
 
 # def new_db_get_engine():

@@ -94,3 +94,122 @@ class Test(BaseTest):
     def test_check_then_set_autolock_timer(self):
         menu.check_then_set_autolock_timer()
         self.assertIsNone(menu.check_then_set_autolock_timer())
+
+    def test_get_input_keyboard_interrupt(self):
+        """Test get_input when KeyboardInterrupt is raised."""
+        with patch('builtins.input', side_effect=KeyboardInterrupt):
+            self.assertFalse(menu.get_input(message='prompt: '))
+
+    @patch.object(menu, 'clear_screen')
+    @patch.object(menu, 'logo_small')
+    def test_menu_command_all(self, *_):
+        """Test menu with 'all' command."""
+        from ...views import secrets
+        with patch.object(secrets, 'to_table', return_value='table'):
+            with patch.object(secrets, 'all', return_value=[]):
+                with patch.object(secrets, 'count', return_value=0):
+                    with patch.object(secrets, 'search_input', return_value='q'):
+                        call_count = [0]
+
+                        def fake_get_input(*args, **kwargs):
+                            call_count[0] += 1
+                            if call_count[0] == 1:
+                                return 'all'
+                            return 'q'
+
+                        with patch.object(menu, 'get_input', side_effect=fake_get_input):
+                            with self.assertRaises(SystemExit):
+                                menu.menu()
+
+    @patch.object(menu, 'clear_screen')
+    @patch.object(menu, 'logo_small')
+    def test_menu_command_add(self, *_):
+        """Test menu with 'add' command."""
+        from ...views import secrets
+        with patch.object(secrets, 'add_input', return_value=None):
+            with patch.object(secrets, 'count', return_value=0):
+                call_count = [0]
+
+                def fake_get_input(*args, **kwargs):
+                    call_count[0] += 1
+                    if call_count[0] == 1:
+                        return 'a'
+                    return 'q'
+
+                with patch.object(menu, 'get_input', side_effect=fake_get_input):
+                    with self.assertRaises(SystemExit):
+                        menu.menu()
+
+    @patch.object(menu, 'clear_screen')
+    @patch.object(menu, 'logo_small')
+    def test_menu_command_lock(self, *_):
+        """Test menu with 'lock' command."""
+        from ...views import secrets
+        with patch.object(secrets, 'count', return_value=0):
+            call_count = [0]
+
+            def fake_get_input(*args, **kwargs):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    return 'l'
+                return 'q'
+
+            with patch.object(menu, 'get_input', side_effect=fake_get_input):
+                with patch.object(menu, 'lock') as mock_lock:
+                    with self.assertRaises(SystemExit):
+                        menu.menu()
+                    mock_lock.assert_called()
+
+    @patch.object(menu, 'clear_screen')
+    @patch.object(menu, 'logo_small')
+    def test_menu_print_empty_command(self, *_):
+        """Test menu when command is False (KeyboardInterrupt)."""
+        from ...views import secrets
+        with patch.object(secrets, 'count', return_value=0):
+            call_count = [0]
+
+            def fake_get_input(*args, **kwargs):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    return False
+                return 'q'
+
+            with patch.object(menu, 'get_input', side_effect=fake_get_input):
+                with self.assertRaises(SystemExit):
+                    menu.menu()
+
+    @patch.object(menu, 'clear_screen')
+    @patch.object(menu, 'logo_small')
+    def test_autolock_expires(self, *_):
+        """Test autolock expiration path."""
+        import time
+        from ...views import secrets
+        with patch.object(secrets, 'count', return_value=0):
+            menu.timer = int(time.time()) - 10000
+            global_scope['conf'].update('autoLockTTL', '1')
+            with patch.object(menu, 'get_input', return_value='q'):
+                with patch.object(menu, 'lock') as mock_lock:
+                    with self.assertRaises(SystemExit):
+                        menu.menu()
+                    mock_lock.assert_called()
+            menu.timer = None
+
+    @patch.object(menu, 'clear_screen')
+    @patch.object(menu, 'logo_small')
+    def test_menu_command_search(self, *_):
+        """Test menu with 'search' command."""
+        from ...views import secrets
+        with patch.object(secrets, 'count', return_value=0):
+            with patch.object(secrets, 'search_input', return_value='q') as mock_search:
+                call_count = [0]
+
+                def fake_get_input(*args, **kwargs):
+                    call_count[0] += 1
+                    if call_count[0] == 1:
+                        return 's'
+                    return 'q'
+
+                with patch.object(menu, 'get_input', side_effect=fake_get_input):
+                    with self.assertRaises(SystemExit):
+                        menu.menu()
+                    mock_search.assert_called_once()

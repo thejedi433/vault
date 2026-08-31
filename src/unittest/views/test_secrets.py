@@ -470,8 +470,9 @@ class Test(BaseTest):
     def test_add_input_notes_cancelled(self):
         """Test add_input when notes input is cancelled."""
         from ...views import menu
+        from ...modules import autocomplete
         with patch.object(menu, 'get_input', return_value='val'):
-            with patch.object(menu, 'get_input', return_value='val'):
+            with patch.object(autocomplete, 'get_input_autocomplete', return_value='login'):
                 with patch('getpass.getpass', return_value='pw'):
                     with patch.object(secrets, 'notes_input', return_value=False):
                         with patch.object(secrets, 'all_categories', return_value=[]):
@@ -569,6 +570,7 @@ class Test(BaseTest):
 
     def test_item_menu_false_command(self):
         """Test item_menu when command is False."""
+        from ...views import menu
         secret = secrets.get_by_id(1)
         call_count = [0]
 
@@ -578,7 +580,7 @@ class Test(BaseTest):
                 return False
             return 'q'
 
-        with patch('builtins.input', side_effect=fake_get_input):
+        with patch.object(menu, 'get_input', side_effect=fake_get_input):
             result = secrets.item_menu(secret)
             self.assertEqual(result, 'q')
 

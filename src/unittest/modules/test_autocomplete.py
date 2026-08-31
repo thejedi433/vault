@@ -43,6 +43,45 @@ class Test(BaseTest):
                 'on', state=1) == 'one_other_thing'
             assert autocomplete.autocomplete('on', state=2) is None
 
+    def test_completer_with_breaking_chars(self):
+        """Test autocomplete with breaking characters in buffer."""
+        autocomplete.set_parameters(
+            list_=['user@gmail.com', 'user2@gmail.com'],
+            case_sensitive=True)
+        with patch('readline.get_line_buffer', return_value='user@gmail.com'):
+            result = autocomplete.autocomplete('user@gmail.com', 0)
+            self.assertIsNotNone(result)
+            self.assertIsInstance(result, str)
+
+    def test_prompt_libedit(self):
+        """Test libedit readline binding path."""
+        with patch('readline.__doc__', 'using libedit'):
+            with patch('readline.parse_and_bind') as mock_bind:
+                with patch('readline.set_completer'):
+                    with patch('builtins.input', return_value='  hello  '):
+                        result = autocomplete.get_input_autocomplete('prompt: ')
+                        self.assertEqual(result, 'hello')
+                        mock_bind.assert_called_with("bind ^I rl_complete")
+
+    def test_prompt_gnu_readline(self):
+        """Test GNU readline binding path."""
+        with patch('readline.__doc__', 'GNU readline'):
+            with patch('readline.parse_and_bind') as mock_bind:
+                with patch('readline.set_completer'):
+                    with patch('builtins.input', return_value='test'):
+                        result = autocomplete.get_input_autocomplete('prompt: ')
+                        self.assertEqual(result, 'test')
+                        mock_bind.assert_called_with("tab: complete")
+
+    def test_prompt_keyboard_interrupt(self):
+        """Test keyboard interrupt during autocomplete."""
+        with patch('readline.__doc__', 'GNU readline'):
+            with patch('readline.parse_and_bind'):
+                with patch('readline.set_completer'):
+                    with patch('builtins.input', side_effect=KeyboardInterrupt):
+                        result = autocomplete.get_input_autocomplete('prompt: ')
+                        self.assertFalse(result)
+
     def test_find_breaking_strings(self):
 
         assert autocomplete.find_breaking_strings('abc') == 0

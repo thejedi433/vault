@@ -78,3 +78,22 @@ class Test(BaseTest):
         patched2.return_value = 'some string'
         clipboard.erase()
         self.assertEqual(clipboard.clipboard_signature, '')
+
+    @patch.object(pyperclip, 'copy', side_effect=pyperclip.PyperclipException('no clipboard'))
+    def test_copy_exception(self, *_):
+        """Test clipboard.copy when pyperclip raises an exception."""
+        self.assertFalse(clipboard.copy('text'))
+
+    @patch.object(pyperclip, 'copy')
+    @patch.object(pyperclip, 'paste')
+    def test_wait_keyboard_interrupt(self, mock_paste, mock_copy):
+        """Test clipboard.wait when KeyboardInterrupt is raised."""
+        import time
+        mock_paste.return_value = 'some string'
+        clipboard.clipboard_signature = clipboard.get_signature('some string')
+
+        def fake_sleep(_):
+            raise KeyboardInterrupt
+
+        with patch('time.sleep', side_effect=fake_sleep):
+            self.assertIsNone(clipboard.wait())

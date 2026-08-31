@@ -96,3 +96,40 @@ class Test(BaseTest):
 
     def test_clear_screen(self):
         self.assertTrue(misc.clear_screen())
+
+    def test_erase_vault_files_removed(self):
+        """Test that erase_vault actually removes the files."""
+        import os
+        fa = tempfile.NamedTemporaryFile(delete=False)
+        fb = tempfile.NamedTemporaryFile(delete=False)
+        fa.write(b'x')
+        fa.close()
+        fb.write(b'y')
+        fb.close()
+        with patch('src.modules.misc.confirm', return_value=True):
+            self.assertRaises(SystemExit, misc.erase_vault, fa.name, fb.name)
+        self.assertFalse(os.path.isfile(fa.name))
+        self.assertFalse(os.path.isfile(fb.name))
+
+    def test_confirm_invalid_input(self):
+        """Test confirm with invalid then valid input."""
+        with patch('builtins.input', side_effect=['x', 'y']):
+            self.assertTrue(misc.confirm())
+
+    def test_is_unicode_not_supported(self):
+        """Test is_unicode_supported when sys.stdout.encoding is not utf."""
+        with patch('sys.stdout') as mock_stdout:
+            mock_stdout.encoding = 'ascii'
+            with patch('sys.platform', 'linux'):
+                self.assertFalse(misc.is_unicode_supported())
+
+    def test_is_unicode_stdout_encoding_none(self):
+        """Test is_unicode_supported when sys.stdout.encoding is None."""
+        with patch('sys.stdout') as mock_stdout:
+            mock_stdout.encoding = None
+            self.assertFalse(misc.is_unicode_supported())
+
+    def test_lock_prefix_not_supported(self):
+        """Test lock_prefix when unicode is not supported."""
+        with patch('src.modules.misc.is_unicode_supported', return_value=False):
+            self.assertEqual(misc.lock_prefix(), '')

@@ -395,3 +395,217 @@ class Test(BaseTest):
 
         secret = secrets.get_by_id(1)
         self.assertIsNone(secrets.show_secret(secret))
+
+    def test_get_names_empty(self):
+        """Test get_names when vault is empty."""
+        self.session.query(SecretModel).delete()
+        self.session.commit()
+        self.assertEqual(secrets.get_names(), [])
+
+    def test_get_top_logins_empty(self):
+        """Test get_top_logins when vault is empty."""
+        self.session.query(SecretModel).delete()
+        self.session.commit()
+        self.assertEqual(secrets.get_top_logins(), [])
+
+    def test_add_input_name_cancelled(self):
+        """Test add_input when name input is cancelled."""
+        from ...views import menu
+        with patch.object(menu, 'get_input', return_value=False):
+            with patch.object(secrets, 'all_categories', return_value=[]):
+                with patch('src.views.secrets.clear_screen'):
+                    self.assertFalse(secrets.add_input())
+
+    def test_add_input_url_cancelled(self):
+        """Test add_input when url input is cancelled."""
+        from ...views import menu
+        call_count = [0]
+
+        def fake_get_input(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return 'some name'
+            return False
+
+        with patch.object(menu, 'get_input', side_effect=fake_get_input):
+            with patch.object(secrets, 'all_categories', return_value=[]):
+                with patch('src.views.secrets.clear_screen'):
+                    self.assertFalse(secrets.add_input())
+
+    def test_add_input_login_cancelled(self):
+        """Test add_input when login input is cancelled."""
+        from ...views import menu
+        from ...modules import autocomplete
+        call_count = [0]
+
+        def fake_get_input(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                return 'value'
+            return False
+
+        with patch.object(menu, 'get_input', side_effect=fake_get_input):
+            with patch.object(autocomplete, 'get_input_autocomplete', return_value=False):
+                with patch.object(secrets, 'all_categories', return_value=[]):
+                    with patch('src.views.secrets.clear_screen'):
+                        self.assertFalse(secrets.add_input())
+
+    def test_add_input_password_cancelled(self):
+        """Test add_input when password input is cancelled."""
+        from ...views import menu
+        from ...modules import autocomplete
+
+        def fake_get_input(message='', secure=False, **kwargs):
+            if secure:
+                return False
+            return 'val'
+
+        with patch.object(menu, 'get_input', side_effect=fake_get_input):
+            with patch.object(autocomplete, 'get_input_autocomplete', return_value='login'):
+                with patch('passwordgenerator.pwgenerator.generate', return_value='suggestion'):
+                    with patch.object(secrets, 'all_categories', return_value=[]):
+                        with patch('src.views.secrets.clear_screen'):
+                            self.assertFalse(secrets.add_input())
+
+    def test_add_input_notes_cancelled(self):
+        """Test add_input when notes input is cancelled."""
+        from ...views import menu
+        from ...modules import autocomplete
+        with patch.object(menu, 'get_input', return_value='val'):
+            with patch.object(autocomplete, 'get_input_autocomplete', return_value='login'):
+                with patch('getpass.getpass', return_value='pw'):
+                    with patch.object(secrets, 'notes_input', return_value=False):
+                        with patch.object(secrets, 'all_categories', return_value=[]):
+                            with patch('src.views.secrets.clear_screen'):
+                                self.assertFalse(secrets.add_input())
+
+    def test_item_menu_l_command(self):
+        """Test item_menu with 'l' (copy login) command."""
+        from ...views import clipboard
+        secret = secrets.get_by_id(1)
+        with patch.object(clipboard, 'copy') as mock_copy:
+            with patch.object(clipboard, 'wait'):
+                call_count = [0]
+
+                def fake_get_input(*args, **kwargs):
+                    call_count[0] += 1
+                    if call_count[0] == 1:
+                        return 'l'
+                    return 'q'
+
+                with patch('builtins.input', side_effect=fake_get_input):
+                    result = secrets.item_menu(secret)
+                    mock_copy.assert_called()
+                    self.assertEqual(result, 'q')
+
+    def test_item_menu_p_command(self):
+        """Test item_menu with 'p' (copy password) command."""
+        from ...views import clipboard
+        secret = secrets.get_by_id(1)
+        with patch.object(clipboard, 'copy') as mock_copy:
+            with patch.object(clipboard, 'wait'):
+                call_count = [0]
+
+                def fake_get_input(*args, **kwargs):
+                    call_count[0] += 1
+                    if call_count[0] == 1:
+                        return 'p'
+                    return 'q'
+
+                with patch('builtins.input', side_effect=fake_get_input):
+                    result = secrets.item_menu(secret)
+                    self.assertEqual(result, 'q')
+
+    def test_item_menu_u_command(self):
+        """Test item_menu with 'u' (copy url) command."""
+        from ...views import clipboard
+        secret = secrets.get_by_id(1)
+        with patch.object(clipboard, 'copy') as mock_copy:
+            with patch.object(clipboard, 'wait'):
+                call_count = [0]
+
+                def fake_get_input(*args, **kwargs):
+                    call_count[0] += 1
+                    if call_count[0] == 1:
+                        return 'u'
+                    return 'q'
+
+                with patch('builtins.input', side_effect=fake_get_input):
+                    result = secrets.item_menu(secret)
+                    self.assertEqual(result, 'q')
+
+    def test_item_menu_o_command(self):
+        """Test item_menu with 'o' (show) command."""
+        secret = secrets.get_by_id(1)
+        with patch.object(secrets, 'show_secret', return_value='q') as mock_show:
+            call_count = [0]
+
+            def fake_get_input(*args, **kwargs):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    return 'o'
+                return 'q'
+
+            with patch('builtins.input', side_effect=fake_get_input):
+                result = secrets.item_menu(secret)
+                mock_show.assert_called()
+                self.assertEqual(result, 'q')
+
+    def test_item_menu_e_command(self):
+        """Test item_menu with 'e' (edit) command."""
+        secret = secrets.get_by_id(1)
+        with patch.object(secrets, 'item_menu_edit', return_value='q') as mock_edit:
+            call_count = [0]
+
+            def fake_get_input(*args, **kwargs):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    return 'e'
+                return 'q'
+
+            with patch('builtins.input', side_effect=fake_get_input):
+                result = secrets.item_menu(secret)
+                mock_edit.assert_called()
+                self.assertEqual(result, 'q')
+
+    def test_item_menu_false_command(self):
+        """Test item_menu when command is False."""
+        from ...views import menu
+        secret = secrets.get_by_id(1)
+        call_count = [0]
+
+        def fake_get_input(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return False
+            return 'q'
+
+        with patch.object(menu, 'get_input', side_effect=fake_get_input):
+            result = secrets.item_menu(secret)
+            self.assertEqual(result, 'q')
+
+    def test_search_input_exception_path(self):
+        """Test search_input exception path."""
+        with patch.object(secrets, 'search_dispatch', return_value=[]):
+            with patch('time.sleep', side_effect=KeyboardInterrupt):
+                with patch('builtins.input', return_value='nonexistent'):
+                    self.assertFalse(secrets.search_input())
+
+    def test_search_input_other_exception(self):
+        """Test search_input other exception path."""
+        with patch.object(secrets, 'search_dispatch', return_value=[]):
+            with patch('time.sleep', side_effect=Exception('other')):
+                with patch('builtins.input', return_value='nonexistent'):
+                    self.assertFalse(secrets.search_input())
+
+    def test_show_secret_keyboard_interrupt(self):
+        """Test show_secret when KeyboardInterrupt is raised."""
+        secret = secrets.get_by_id(1)
+        global_scope['conf'].update('hideSecretTTL', '1')
+
+        def fake_sleep(_):
+            raise KeyboardInterrupt
+
+        with patch('time.sleep', side_effect=fake_sleep):
+            with patch.object(secrets, 'item_view', return_value=None):
+                self.assertIsNone(secrets.show_secret(secret))

@@ -79,3 +79,28 @@ class Test(BaseTest):
         self.enc2.set_salt(salt)
         encrypted = self.enc2.encrypt(secret_string)
         self.assertRaises(ValueError, self.enc2.decrypt, encrypted)
+
+    def test_decrypt_empty_data_after_unpad(self):
+        """Test defensive code path when AES.decrypt returns empty data."""
+        import base64
+        from unittest.mock import patch as mock_patch
+        enc = Encryption(b'testkey123456789')
+        enc.gen_salt()
+        IV = b'\x00' * 16
+        aes = enc.get_aes(IV)
+        with mock_patch.object(aes, 'decrypt', return_value=b''):
+            with mock_patch.object(enc, 'get_aes', return_value=aes):
+                fake_enc = base64.b64encode(IV + b'\x00' * 16)
+                self.assertRaises(ValueError, enc.decrypt, fake_enc)
+
+    def test_decrypt_invalid_padding(self):
+        """Test invalid padding when padding bytes don't match."""
+        import base64
+        enc = Encryption(b'testkey123456789')
+        enc.gen_salt()
+        IV = b'\x00' * 16
+        invalid_data = b'\x00' * 15 + b'\x05'
+        aes = enc.get_aes(IV)
+        encrypted = aes.encrypt(invalid_data)
+        with self.assertRaises(ValueError):
+            enc.decrypt(base64.b64encode(IV + encrypted))

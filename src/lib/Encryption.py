@@ -87,9 +87,17 @@ class Encryption():
 
     def decrypt(self, enc_secret):
         """
-            Decrypt a secret
-        """
+        Decrypt a secret.
 
+        Args:
+            enc_secret: Base64-encoded encrypted secret
+
+        Returns:
+            Decrypted secret as bytes
+
+        Raises:
+            ValueError: If padding is invalid (indicates tampering or wrong key)
+        """
         # Decode base 64
         enc_secret = base64.b64decode(enc_secret)
 
@@ -102,12 +110,20 @@ class Encryption():
         # Decrypt
         data = aes.decrypt(enc_secret[AES.block_size:])
 
-        # pick the padding value from the end; Python 2.x: ord(data[-1])
+        # pick the padding value from the end
+        # BUG FIX: Enhanced padding validation
+        if not data:
+            raise ValueError("Empty data after decryption")
+
         padding = data[-1]
 
-        # Python 2.x: chr(padding) * padding
+        # Validate padding value is in range
+        if padding < 1 or padding > AES.block_size:
+            raise ValueError("Invalid padding value")
+
+        # Validate all padding bytes match
         if data[-padding:] != bytes([padding]) * padding:
-            raise ValueError("Invalid padding...")
+            raise ValueError("Invalid padding - data may be corrupted or key is wrong")
 
         # Reset salted key
         self.set_salt()

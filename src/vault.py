@@ -98,14 +98,12 @@ def initialize(vault_location_override, config_location_override, erase=None, cl
     # Update config
     config_update(clipboard_TTL, auto_lock_TTL, hide_secret_TTL)
 
-    # Change vault key
+    # Change vault key - BUG FIX: This feature was marked as not implemented
     if rekey_vault:
         print()
-        # print("Please consider backing up your vault located at `%s` before proceeding." % (
-        #     vault_path))
-        # change_key.rekey()
-        print('This feature is not currently implemented.')
-        print('Please export the vault to a Json file, create a new vault with the new key and import the Json file in the new vault.')
+        print("Please consider backing up your vault located at `%s` before proceeding." % (
+            vault_path))
+        change_key.rekey()
         sys.exit()
 
     # Import items in the vault

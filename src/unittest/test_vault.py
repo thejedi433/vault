@@ -9,7 +9,7 @@ from .. import vault
 from ..modules import misc
 from ..modules.carry import global_scope
 from ..lib.Config import Config
-from ..views import menu, setup
+from ..views import menu, setup, change_key
 
 
 class Test(BaseTest):
@@ -73,8 +73,11 @@ class Test(BaseTest):
         self.assertRaises(SystemExit, vault.initialize,
                           file_vault.name, self.conf_path.name + '/config', erase=True)
 
-    def test_initialize_3(self):
-        # Test re-keyi
+    @patch.object(change_key, 'rekey')
+    def test_initialize_3(self, patched):
+        # Test re-key
+
+        patched.return_value = None
 
         # Set temporary files
         file_vault = tempfile.NamedTemporaryFile(delete=False)

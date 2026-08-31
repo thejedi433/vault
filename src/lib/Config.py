@@ -4,15 +4,24 @@ from uuid import uuid4
 
 
 class Config:
+    """
+    Configuration manager for the vault application.
 
-    # Config file location
-    config_path = None
+    Handles reading, writing, and managing vault configuration settings
+    including encryption salts, TTL settings, and version information.
+    """
 
-    # Config
-    config = configparser.ConfigParser()
+    def __init__(self, config_path: str):
+        """
+        Initialize Config with a path to the configuration file.
 
-    def __init__(self, config_path):
+        Args:
+            config_path: Path to the configuration file
+        """
         self.config_path = config_path
+        # BUG FIX: Moved from class-level to instance-level to prevent
+        # shared mutable state between Config instances
+        self.config = configparser.ConfigParser()
 
     def get_config(self):
         """
@@ -29,19 +38,20 @@ class Config:
 
     def set_default_config_file(self):
         """
-            Set a user default config file
-        """
+        Set a user default configuration file with initial settings.
 
-        self.config['MAIN'] = {
-            'version': '2.00',
-            'keyVersion': '1',  # Will be used to support legacy key versions
-                                # if the algorithm changes
-            'salt': self.generate_random_salt(),
-            'clipboardTTL': '15',
-            'hideSecretTTL': '5',
-            'autoLockTTL': '900',
-            'encryptedDb': True,
-        }
+        Creates a new config file with default values for version, salt,
+        and TTL settings.
+        """
+        # Set each config value individually to avoid type issues
+        self.config['MAIN'] = {}
+        self.config['MAIN']['version'] = '2.00'
+        self.config['MAIN']['keyVersion'] = '1'
+        self.config['MAIN']['salt'] = self.generate_random_salt()
+        self.config['MAIN']['clipboardTTL'] = '15'
+        self.config['MAIN']['hideSecretTTL'] = '5'
+        self.config['MAIN']['autoLockTTL'] = '900'
+        self.config['MAIN']['encryptedDb'] = 'True'
 
         # Save
         self.save_config()
@@ -50,6 +60,10 @@ class Config:
         """
             Update a config value
         """
+
+        # Ensure config is initialized (MAIN section exists)
+        if 'MAIN' not in self.config:
+            self.get_config()
 
         # Set new value
         self.config['MAIN'][name] = str(value)
